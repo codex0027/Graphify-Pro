@@ -6,8 +6,8 @@
 pub mod llm;
 
 use graphify_core::metrics::{NodeMetrics, CodeQualityIssue, CodeQualityType};
-use graphify_core::node::{GraphNode, NodeType};
-use graphify_core::edge::{GraphEdge, EdgeRelation};
+use graphify_core::node::NodeType;
+use graphify_core::edge::EdgeRelation;
 use graphify_core::confidence::Confidence;
 use graphify_core::KnowledgeGraph;
 use std::collections::{HashMap, HashSet};

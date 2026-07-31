@@ -21,6 +21,12 @@ pub struct GraphDB {
     node_index: HashMap<String, NodeIndex>,
 }
 
+impl Default for GraphDB {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GraphDB {
     /// Create an empty graph database.
     pub fn new() -> Self {
@@ -301,7 +307,7 @@ impl GraphDB {
             })
             .collect();
 
-        degrees.sort_by(|a, b| b.2.cmp(&a.2));
+        degrees.sort_by_key(|(_, _, deg)| std::cmp::Reverse(*deg));
         degrees.truncate(top_k);
         degrees
     }
@@ -362,7 +368,7 @@ impl GraphDB {
                                 "{} via {} edge from {}",
                                 distance_label,
                                 edge.weight().relation.label(),
-                                &self.graph[edge.source()].label,
+                                self.graph[edge.source()].label,
                             )
                         },
                         probability: if new_depth == 1 { 1.0 } else { 0.7 / new_depth as f64 },

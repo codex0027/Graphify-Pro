@@ -9,7 +9,6 @@ use graphify_core::node::{GraphNode, NodeType};
 use graphify_core::edge::{EdgeRelation, GraphEdge};
 use graphify_core::confidence::Confidence;
 use serde::{Serialize, Deserialize};
-use std::collections::HashSet;
 use std::path::Path;
 
 /// Result of extracting a single file.
@@ -79,7 +78,7 @@ impl RegexExtractor {
     pub fn extract_python(content: &str, file_path: &str, config: &ExtractConfig) -> ExtractionResult {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
-        let mut errors = Vec::new();
+        let errors = Vec::new();
         let rel_path = Path::new(file_path);
         let file_id = Self::file_node_id(rel_path);
         let stem = rel_path.file_stem().and_then(|s| s.to_str()).unwrap_or("unknown");
@@ -283,7 +282,7 @@ impl RegexExtractor {
     pub fn extract_rust(content: &str, file_path: &str, config: &ExtractConfig) -> ExtractionResult {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
-        let mut errors = Vec::new();
+        let errors = Vec::new();
         let rel_path = Path::new(file_path);
         let file_id = Self::file_node_id(rel_path);
         let stem = rel_path.file_stem().and_then(|s| s.to_str()).unwrap_or("unknown");
@@ -488,7 +487,7 @@ impl RegexExtractor {
         let re_class = regex::Regex::new(r"(?:export\s+)?(?:abstract\s+)?class\s+(\w+)").unwrap();
         let re_func = regex::Regex::new(r"(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(").unwrap();
         let re_arrow = regex::Regex::new(r"(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>").unwrap();
-        let re_method = regex::Regex::new(r"(?:async\s+)?(\w+)\s*\([^)]*\)\s*\{").unwrap();
+        let _re_method = regex::Regex::new(r"(?:async\s+)?(\w+)\s*\([^)]*\)\s*\{").unwrap();
         let re_import = regex::Regex::new(r#"import\s+(?:\{[^}]*\}|(\w+))\s+from\s+['"]([^'"]+)['"]"#).unwrap();
         let re_export = regex::Regex::new(r#"export\s+\{[^}]*\}\s+from\s+['"]([^'"]+)['"]"#).unwrap();
         let re_interface = regex::Regex::new(r"(?:export\s+)?interface\s+(\w+)").unwrap();
@@ -657,7 +656,7 @@ impl RegexExtractor {
     pub fn extract_go(content: &str, file_path: &str) -> ExtractionResult {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
-        let mut errors = Vec::new();
+        let errors = Vec::new();
         let rel_path = Path::new(file_path);
         let file_id = Self::file_node_id(rel_path);
         let stem = rel_path.file_stem().and_then(|s| s.to_str()).unwrap_or("unknown");
@@ -798,7 +797,7 @@ impl RegexExtractor {
 
     /// Generic regex extraction for languages without dedicated tree-sitter grammar.
     pub fn extract_generic(
-        content: &str, file_path: &str, language: &str, config: &ExtractConfig,
+        content: &str, file_path: &str, language: &str, _config: &ExtractConfig,
     ) -> ExtractionResult {
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
@@ -859,7 +858,7 @@ impl RegexExtractor {
             for cap in re_import.captures_iter(line) {
                 let import = cap[1].trim().trim_end_matches(';').trim();
                 if !import.is_empty() && import != "*" {
-                    let last = import.split(['.', '/', ':', '\\']).last().unwrap_or(import);
+                    let last = import.split(['.', '/', ':', '\\']).next_back().unwrap_or(import);
                     edges.push(GraphEdge {
                         source: file_id.clone(), target: sanitize_id(last), relation: EdgeRelation::Imports,
                         context: Some("import".into()), confidence: Confidence::Extracted,

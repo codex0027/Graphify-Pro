@@ -10,7 +10,7 @@ use graphify_build::build_graph;
 use graphify_cluster::{detect_communities, label_communities_heuristic};
 use graphify_analyze::{god_nodes, compute_metrics};
 use graphify_export::export_all;
-use notify::{Event, EventKind, RecursiveMode, Watcher, Config as NotifyConfig};
+use notify::{Event, EventKind, RecursiveMode, Watcher};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
@@ -79,7 +79,7 @@ impl FileWatcher {
     pub fn start(&self) -> Result<mpsc::Receiver<FileChangeBatch>, anyhow::Error> {
         let (tx, rx) = mpsc::channel();
         let root = self.config.root.clone();
-        let debounce = Duration::from_millis(self.config.debounce_ms);
+        let _debounce = Duration::from_millis(self.config.debounce_ms);
 
         let mut watcher = notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
             match res {

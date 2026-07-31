@@ -326,7 +326,7 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, 
     for dep in &manifest_deps {
         let mut nodes = vec![
             graphify_core::node::GraphNode::new(
-                &format!("dep_{}", dep.name.replace(['-', '.'], "_")),
+                format!("dep_{}", dep.name.replace(['-', '.'], "_")),
                 &dep.name,
                 graphify_core::node::NodeType::Dependency,
             ),

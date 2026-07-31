@@ -53,8 +53,6 @@ pub enum LlmProvider {
     Anthropic,
     Gemini,
     Ollama,
-    /// Any OpenAI-compatible endpoint (OpenRouter, Groq, Together, etc.)
-    OpenAICompatible,
 }
 
 /// LLM backend configuration.
@@ -82,7 +80,7 @@ impl Default for LlmConfig {
                     LlmProvider::Anthropic
                 } else if std::env::var("GEMINI_API_KEY").is_ok() {
                     LlmProvider::Gemini
-                } else if std::env::var("OPENAI_BASE_URL").map_or(false, |u| u.contains("11434")) {
+                } else if std::env::var("OPENAI_BASE_URL").is_ok_and(|u| u.contains("11434")) {
                     LlmProvider::Ollama
                 } else {
                     LlmProvider::OpenAI
@@ -352,9 +350,11 @@ fn call_gemini(config: &LlmConfig, prompt: &str) -> anyhow::Result<String> {
     });
 
     // Gemini URL format: /models/{model}:generateContent
-    let url = format!("{}/models/{}:generateContent?key={}", config.base_url, config.model, config.api_key);
+    // Uses x-goog-api-key header (not URL param) to avoid logging API keys
+    let url = format!("{}/models/{}:generateContent", config.base_url, config.model);
     let output = Command::new("curl")
         .args(["-s", "-X", "POST", &url])
+        .arg("-H").arg(format!("x-goog-api-key: {}", config.api_key))
         .arg("-H").arg("Content-Type: application/json")
         .arg("-d").arg(body.to_string())
         .output()
@@ -437,12 +437,11 @@ mod tests {
     }
 
     #[test]
-    fn test_provider_auto_detection_openai() {
-        // Default in test env should be OpenAI (no special env vars set)
+    fn test_provider_default_has_url_and_model() {
+        // In test env with no API keys, default provider should be OpenAI
         let config = LlmConfig::default();
-        // The default may be OpenAI or Anthropic/Gemini depending on env — but
-        // at minimum the base_url should be set
         assert!(!config.base_url.is_empty());
         assert!(!config.model.is_empty());
+        assert!(config.base_url.contains("openai"));
     }
 }

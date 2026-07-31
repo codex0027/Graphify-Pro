@@ -8,10 +8,11 @@
 use serde::{Deserialize, Serialize};
 
 /// Confidence level for graph relationships.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, PartialOrd, Ord, Default)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Confidence {
     /// Deterministically extracted from source (e.g., AST-parsed imports, direct calls)
+    #[default]
     Extracted,
     /// Deduced through semantic analysis or second-pass cross-references
     Inferred,
@@ -47,12 +48,6 @@ impl Confidence {
 impl std::fmt::Display for Confidence {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.label())
-    }
-}
-
-impl Default for Confidence {
-    fn default() -> Self {
-        Confidence::Extracted
     }
 }
 

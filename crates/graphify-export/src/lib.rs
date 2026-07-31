@@ -5,9 +5,10 @@
 //! - HTML interactive visualization (graph.html) using D3.js
 //! - Markdown architectural report (GRAPH_REPORT.md)
 
-use graphify_core::{KnowledgeGraph, GraphStats};
+use graphify_core::KnowledgeGraph;
 use graphify_core::community::Community;
 use graphify_core::metrics::NodeMetrics;
+use graphify_core::GraphStats;
 use std::path::Path;
 use std::collections::HashMap;
 
@@ -216,7 +217,7 @@ pub fn export_markdown(
     kg: &KnowledgeGraph,
     communities: &[Community],
     god_nodes: &[(String, String, usize)],
-    metrics: &[NodeMetrics],
+    _metrics: &[NodeMetrics],
 ) -> String {
     let mut report = String::new();
 
@@ -329,7 +330,7 @@ pub fn export_mermaid(kg: &KnowledgeGraph, communities: &[Community]) -> String 
             _ => ("[", "]"),
         };
         let clean_label = node.label.replace('"', "'");
-        let safe_id = node.id.replace('.', "_").replace('-', "_").replace(":", "_");
+        let safe_id = node.id.replace(['.', '-'], "_").replace(":", "_");
         let style = if node.is_god_node { " fill:#f96" } else { "" };
         diagram.push_str(&format!(
             "    {}{}[\"{}\"]{}{}\n",
@@ -353,8 +354,8 @@ pub fn export_mermaid(kg: &KnowledgeGraph, communities: &[Community]) -> String 
             graphify_core::confidence::Confidence::Inferred => " -.- ",
             graphify_core::confidence::Confidence::Ambiguous => " -.- ",
         };
-        let safe_src = edge.source.replace('.', "_").replace('-', "_").replace(":", "_");
-        let safe_tgt = edge.target.replace('.', "_").replace('-', "_").replace(":", "_");
+        let safe_src = edge.source.replace(['.', '-'], "_").replace(":", "_");
+        let safe_tgt = edge.target.replace(['.', '-'], "_").replace(":", "_");
         if style.is_empty() {
             diagram.push_str(&format!("    {} -->|{}| {}\n", safe_src, label, safe_tgt));
         } else {
@@ -406,17 +407,17 @@ pub fn export_svg(kg: &KnowledgeGraph) -> String {
     for edge in &kg.edges {
         if let (Some(&(x1, y1)), Some(&(x2, y2))) = (positions.get(&edge.source), positions.get(&edge.target)) {
             let opacity = if edge.confidence == graphify_core::confidence::Confidence::Inferred { "0.3" } else { "0.5" };
-            let _ = write!(svg, "  <line x1='{x1}' y1='{y1}' x2='{x2}' y2='{y2}' class='edge' opacity='{op}'/>\n", x1=x1, y1=y1, x2=x2, y2=y2, op=opacity);
+            let _ = writeln!(svg, "  <line x1='{x1}' y1='{y1}' x2='{x2}' y2='{y2}' class='edge' opacity='{op}'/>", x1=x1, y1=y1, x2=x2, y2=y2, op=opacity);
         }
     }
 
     // Draw nodes
-    for (i, node) in kg.nodes.iter().enumerate() {
+    for node in kg.nodes.iter() {
         if let Some(&(x, y)) = positions.get(&node.id) {
             let cls = if node.is_god_node { "god" } else { "node" };
             let r = if node.is_god_node { 5.0 } else { 2.5 };
             let label = node.label.chars().take(15).collect::<String>().replace('"', "'");
-            let _ = write!(svg, "  <circle cx='{x}' cy='{y}' r='{r}' class='{cls}'/><text x='{tx}' y='{ty}' class='label'>{label}</text>\n",
+            let _ = writeln!(svg, "  <circle cx='{x}' cy='{y}' r='{r}' class='{cls}'/><text x='{tx}' y='{ty}' class='label'>{label}</text>",
                 x = x, y = y, r = r, cls = cls,
                 tx = x + 6.0, ty = y + 1.5,
                 label = label);
@@ -432,13 +433,13 @@ pub fn export_neo4j_csv(kg: &KnowledgeGraph, output_dir: &Path) -> Result<(), an
     // Nodes CSV: id,label,type,language,isGodNode,sourceFile
     let nodes_path = output_dir.join("neo4j_nodes.csv");
     let mut wtr = csv::Writer::from_path(&nodes_path)?;
-    wtr.write_record(&["nodeId:ID", "label", "type", "language", "isGodNode:boolean", "sourceFile"])?;
+    wtr.write_record(["nodeId:ID", "label", "type", "language", "isGodNode:boolean", "sourceFile"])?;
     for node in &kg.nodes {
         let type_label = node.node_type.label().to_string();
         let lang = node.language.clone().unwrap_or_default();
         let is_god = if node.is_god_node { "true".to_string() } else { "false".to_string() };
         let src_file = node.source_file.clone().unwrap_or_default();
-        wtr.write_record(&[
+        wtr.write_record([
             &node.id,
             &node.label,
             &type_label,
@@ -452,12 +453,12 @@ pub fn export_neo4j_csv(kg: &KnowledgeGraph, output_dir: &Path) -> Result<(), an
     // Relationships CSV: source,target,relation,confidence
     let edges_path = output_dir.join("neo4j_relationships.csv");
     let mut wtr = csv::Writer::from_path(&edges_path)?;
-    wtr.write_record(&[":START_ID", ":END_ID", ":TYPE", "confidence", "weight:float"])?;
+    wtr.write_record([":START_ID", ":END_ID", ":TYPE", "confidence", "weight:float"])?;
     for edge in &kg.edges {
         let rel_label = edge.relation.label().to_string();
         let conf_str = format!("{:?}", edge.confidence);
         let weight_str = edge.weight.to_string();
-        wtr.write_record(&[
+        wtr.write_record([
             &edge.source,
             &edge.target,
             &rel_label,

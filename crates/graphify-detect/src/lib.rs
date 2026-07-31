@@ -3,7 +3,6 @@
 //! Scans project directories, classifies files by type, and determines which
 //! files should be indexed for the knowledge graph.
 
-use graphify_core::node::NodeType;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
@@ -51,6 +50,12 @@ pub enum FileCategory {
 /// Language mapping based on file extensions.
 pub struct LanguageDetector {
     ext_to_lang: HashMap<String, (String, FileCategory)>,
+}
+
+impl Default for LanguageDetector {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl LanguageDetector {

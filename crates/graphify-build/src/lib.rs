@@ -6,7 +6,6 @@
 use graphify_core::node::{GraphNode, NodeType};
 use graphify_core::edge::{EdgeRelation, GraphEdge};
 use graphify_core::confidence::Confidence;
-use graphify_core::hyperedge::HyperEdge;
 use graphify_core::{KnowledgeGraph, GraphMetadata, GraphStats, ConfidenceDistribution};
 use sha2::{Sha256, Digest};
 use serde::{Serialize, Deserialize};
@@ -144,7 +143,7 @@ impl BuildManifest {
             std::fs::read_to_string(path)
                 .ok()
                 .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or_else(|| Self::new())
+                .unwrap_or_else(Self::new)
         } else {
             Self::new()
         }
