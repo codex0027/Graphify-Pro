@@ -366,6 +366,7 @@ impl TreeSitterExtractor {
     }
 
     /// Generic AST walker driven by LanguageConfig.
+    #[allow(clippy::too_many_arguments)]
     fn handle_generic(
         node: &Node, source: &[u8], file_id: &str, stem: &str, file_path: &str,
         lang: TsLanguage, config: &ExtractConfig, lc: &LangConfig,
@@ -563,6 +564,7 @@ fn contains_edge(source: &str, target: &str, ctx: &str, file: &str, loc: &str) -
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn extract_rationale(
     text: &str, file_id: &str, stem: &str, file_path: &str, loc: &str,
     nodes: &mut Vec<GraphNode>, edges: &mut Vec<GraphEdge>,

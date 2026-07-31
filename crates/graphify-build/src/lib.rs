@@ -3,7 +3,9 @@
 //! Builds the knowledge graph from extracted nodes and edges, handling
 //! deduplication, merging, and connection.
 
-use graphify_core::node::{GraphNode, NodeType};
+use graphify_core::node::GraphNode;
+#[cfg(test)]
+use graphify_core::node::NodeType;
 use graphify_core::edge::{EdgeRelation, GraphEdge};
 use graphify_core::confidence::Confidence;
 use graphify_core::{KnowledgeGraph, GraphMetadata, GraphStats, ConfidenceDistribution};

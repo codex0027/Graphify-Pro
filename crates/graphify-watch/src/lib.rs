@@ -61,6 +61,7 @@ pub struct FileWatcher {
     /// Current knowledge graph
     current_graph: Option<KnowledgeGraph>,
     /// Whether a rebuild is in progress
+    #[allow(dead_code)]
     rebuilding: bool,
 }
 

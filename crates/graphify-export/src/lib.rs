@@ -8,6 +8,7 @@
 use graphify_core::KnowledgeGraph;
 use graphify_core::community::Community;
 use graphify_core::metrics::NodeMetrics;
+#[cfg(test)]
 use graphify_core::GraphStats;
 use std::path::Path;
 use std::collections::HashMap;
@@ -280,7 +281,7 @@ pub fn export_markdown(
         report.push_str(&format!("Detected {} communities:\n\n", communities.len()));
 
         let mut sorted_communities: Vec<_> = communities.iter().collect();
-        sorted_communities.sort_by(|a, b| b.size.cmp(&a.size));
+        sorted_communities.sort_by_key(|c| std::cmp::Reverse(c.size));
 
         for comm in sorted_communities.iter().take(15) {
             report.push_str(&format!("### {} ({} nodes)\n\n", comm.label, comm.size));

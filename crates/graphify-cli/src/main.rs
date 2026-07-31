@@ -233,6 +233,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 // ── Command Implementations ───────────────────────────────────────────────────
 
+#[allow(clippy::ptr_arg)]
 fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, llm: bool) -> Result<(), anyhow::Error> {
     println!("🔬 Graphify Pro — Building Knowledge Graph");
     println!("   Project: {}", path.display());
@@ -428,6 +429,7 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, 
     Ok(())
 }
 
+#[allow(clippy::ptr_arg)]
 fn cmd_watch(path: &PathBuf, output: &PathBuf) -> Result<(), anyhow::Error> {
     let config = graphify_watch::WatchConfig {
         root: path.clone(),
@@ -811,6 +813,7 @@ fn load_graph(path: &PathBuf) -> Result<graphify_core::KnowledgeGraph, anyhow::E
 
 // ── New Commands ──────────────────────────────────────────────────────────────
 
+#[allow(clippy::ptr_arg)]
 fn cmd_serve(graph_path: &PathBuf, port: u16) -> Result<(), anyhow::Error> {
     let kg = load_graph(graph_path)?;
     let db = std::sync::Arc::new(graphify_core::graph::GraphDB::from_knowledge_graph(&kg));
@@ -1086,6 +1089,7 @@ echo "📊 Knowledge graph updated by Graphify Pro"
     Ok(())
 }
 
+#[allow(clippy::ptr_arg)]
 fn cmd_benchmark(path: &PathBuf, graph_path: Option<&PathBuf>) -> Result<(), anyhow::Error> {
     println!("⚡ Graphify Pro — Token Reduction Benchmark");
     println!();

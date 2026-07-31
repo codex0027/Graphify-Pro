@@ -6,7 +6,7 @@
 use graphify_core::community::Community;
 use graphify_core::KnowledgeGraph;
 use petgraph::graph::DiGraph;
-use petgraph::visit::{IntoNodeReferences, IntoEdgeReferences, EdgeRef};
+use petgraph::visit::{IntoNodeReferences, EdgeRef};
 use std::collections::HashMap;
 
 /// Run community detection on a knowledge graph.
@@ -202,7 +202,7 @@ fn louvain_communities(
                 node_degrees.push((node_id.clone(), degree));
             }
         }
-        node_degrees.sort_by(|a, b| b.1.cmp(&a.1));
+        node_degrees.sort_by_key(|(_, d)| std::cmp::Reverse(*d));
         comm.hubs = node_degrees
             .iter()
             .take(3)
