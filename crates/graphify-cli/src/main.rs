@@ -33,6 +33,10 @@ enum Commands {
         /// Force full rebuild (ignore cache)
         #[arg(long)]
         force: bool,
+
+        /// Enable LLM semantic pass for community labeling (requires OPENAI_API_KEY)
+        #[arg(long)]
+        llm: bool,
     },
 
     /// Watch the project for changes and update the graph automatically
@@ -206,8 +210,8 @@ fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Build { path, output, max_file_size, force } => {
-            cmd_build(&path, &output, max_file_size, force)
+        Commands::Build { path, output, max_file_size, force, llm } => {
+            cmd_build(&path, &output, max_file_size, force, llm)
         }
         Commands::Watch { path, output } => cmd_watch(&path, &output),
         Commands::Analyze { graph, top, quality } => cmd_analyze(&graph, top, quality),
@@ -229,7 +233,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 // ── Command Implementations ───────────────────────────────────────────────────
 
-fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool) -> Result<(), anyhow::Error> {
+fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, llm: bool) -> Result<(), anyhow::Error> {
     println!("🔬 Graphify Pro — Building Knowledge Graph");
     println!("   Project: {}", path.display());
     println!("   Output:  {}", output.display());
@@ -264,6 +268,16 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool) 
     if let Some(code_files) = detection.files.get(&graphify_detect::FileCategory::Code) {
         for file in code_files {
             let rel_path = file.relative_path.to_string_lossy().to_string();
+
+            // Handle PDF files (read metadata, not text content)
+            let is_pdf = file.path.extension().map(|e| e == "pdf").unwrap_or(false);
+            if is_pdf {
+                let result = graphify_extract::RegexExtractor::extract_pdf(&rel_path);
+                manifest.update(rel_path, "", result.language.clone());
+                extractions.push(result);
+                continue;
+            }
+
             match std::fs::read_to_string(&file.path) {
                 Ok(content) => {
                     // Incremental cache check — always extract for correctness,
@@ -330,6 +344,34 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool) 
     kg.communities = communities.clone();
     kg.stats.community_count = communities.len();
     println!("🏘️  Detected {} communities", communities.len());
+
+    // ── LLM Semantic Pass (optional) ─────────────────────────────────────────────
+    if llm {
+        let llm_config = graphify_analyze::llm::LlmConfig::default();
+        if llm_config.is_configured() {
+            println!("🤖 Running LLM semantic pass...");
+            match graphify_analyze::llm::label_communities_llm(
+                &llm_config, &communities, &kg.nodes, 10,
+            ) {
+                Ok(labels) => {
+                    for label in &labels {
+                        if let Some(comm) = communities.iter_mut().find(|c| c.id == label.community_id) {
+                            comm.label = label.name.clone();
+                            println!("  🏷️  Community '{}' → '{}'", label.community_id, label.name);
+                        }
+                    }
+                    kg.communities = communities.clone();
+                }
+                Err(e) => eprintln!("  ⚠️ LLM pass failed: {}", e),
+            }
+        } else {
+            println!("⚠️  LLM pass skipped: OPENAI_API_KEY not set. Set it or use Ollama:");
+            println!("   export OPENAI_API_KEY=sk-...");
+            println!("   # or for local Ollama:");
+            println!("   export OPENAI_BASE_URL=http://localhost:11434/v1");
+            println!("   export OPENAI_API_KEY=ollama");
+        }
+    }
 
     // Analyze
     let gods = graphify_analyze::god_nodes(&kg, 10);
@@ -1036,7 +1078,7 @@ fn cmd_benchmark(path: &PathBuf, graph_path: Option<&PathBuf>) -> Result<(), any
             // Build graph first
             let output = std::path::PathBuf::from("graphify-out");
             println!("📝 Building graph first...");
-            cmd_build(path, &output, 10, true)?;
+            cmd_build(path, &output, 10, true, false)?;
             output.join("graph.json")
         }
     };

@@ -1,7 +1,9 @@
-//! # Graphify Analyze — Graph Metrics & Quality Analysis
+//! # Graphify Analyze — Graph Metrics, Quality Analysis & LLM Semantic Pass
 //!
 //! Analyzes the knowledge graph to find god nodes, architectural patterns,
-//! code quality issues, and surprising connections.
+//! code quality issues, surprising connections, and AI-powered semantic insights.
+
+pub mod llm;
 
 use graphify_core::metrics::{NodeMetrics, CodeQualityIssue, CodeQualityType};
 use graphify_core::node::{GraphNode, NodeType};

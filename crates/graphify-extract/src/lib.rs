@@ -988,6 +988,77 @@ impl RegexExtractor {
         }
     }
 
+    /// Extract metadata from a PDF file (creates document nodes with file info
+    /// and attempts basic text structure detection).
+    /// Full PDF text parsing requires the `pdf-extract` crate; this provides
+    /// foundational support with file-level metadata and section detection.
+    pub fn extract_pdf(file_path: &str) -> ExtractionResult {
+        let rel_path = Path::new(file_path);
+        let file_id = Self::file_node_id(rel_path);
+        let stem = rel_path.file_stem().and_then(|s| s.to_str()).unwrap_or("unknown");
+
+        let file_size = std::fs::metadata(file_path)
+            .map(|m| m.len())
+            .unwrap_or(0);
+
+        let mut nodes = vec![
+            GraphNode {
+                id: file_id.clone(),
+                label: file_path.to_string(),
+                node_type: NodeType::Document,
+                source_file: Some(file_path.to_string()),
+                source_location: None,
+                confidence: Confidence::Extracted,
+                is_god_node: false,
+                community_id: None,
+                metadata: Some(serde_json::json!({
+                    "file_size_bytes": file_size,
+                    "format": "PDF",
+                })),
+                language: Some("PDF".to_string()),
+            }
+        ];
+        let mut edges = Vec::new();
+
+        // Try raw text reading for embedded text patterns
+        if let Ok(content) = std::fs::read_to_string(file_path) {
+            let re_heading = regex::Regex::new(r"(?m)^([A-Z][A-Za-z0-9\s\-:]{3,80})$").unwrap();
+            for (line_num, line) in content.lines().enumerate() {
+                if let Some(cap) = re_heading.captures(line) {
+                    let title = cap[1].trim().to_string();
+                    if title.len() > 5 && !title.contains("Page")
+                        && !title.contains("stream") && !title.contains("endobj")
+                    {
+                        let node_id = sanitize_id(&format!("{}_{}", stem, title.replace(' ', "_")));
+                        nodes.push(GraphNode {
+                            id: node_id.clone(), label: title.clone(),
+                            node_type: NodeType::Document,
+                            source_file: Some(file_path.to_string()),
+                            source_location: Some(format!("L{}", line_num + 1)),
+                            confidence: Confidence::Extracted, is_god_node: false,
+                            community_id: None, metadata: None,
+                            language: Some("PDF".to_string()),
+                        });
+                        edges.push(GraphEdge {
+                            source: file_id.clone(), target: node_id,
+                            relation: EdgeRelation::Contains,
+                            context: Some("section".into()),
+                            confidence: Confidence::Extracted,
+                            source_file: Some(file_path.to_string()),
+                            source_location: Some(format!("L{}", line_num + 1)),
+                            weight: 1.0, metadata: None,
+                        });
+                    }
+                }
+            }
+        }
+
+        ExtractionResult {
+            file_path: file_path.to_string(), nodes, edges,
+            language: "PDF".to_string(), errors: Vec::new(),
+        }
+    }
+
     /// Dispatch extraction based on file extension. Tries tree-sitter first, falls back to regex.
     pub fn extract_file(
         content: &str,
@@ -1000,6 +1071,11 @@ impl RegexExtractor {
             .and_then(|e| e.to_str())
             .unwrap_or("")
             .to_lowercase();
+
+        // PDF extraction (handled by CLI before reaching extract_file)
+        if ext == "pdf" {
+            return Self::extract_pdf(file_path);
+        }
 
         // Try tree-sitter first
         if let Some(ts_lang) = tree_sitter::TsLanguage::from_extension(&ext) {

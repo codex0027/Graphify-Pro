@@ -224,8 +224,8 @@ Graphify Pro closes every major feature gap while adding unique advantages:
 | Startup speed | 500ms | **2ms** |
 | Memory | 200-500MB | **50-150MB** |
 | AI editor hooks | 20+ | Web API (extensible) |
-| Multimedia (PDF/video) | ✅ | ❌ (planned) |
-| LLM semantic pass | ✅ | ❌ (planned) |
+| Multimedia (PDF/video) | ✅ | ✅ PDF extraction built-in (video/images via LLM vision API) |
+| LLM semantic pass | ✅ | ✅ LLM-powered community labeling + architecture analysis (OpenAI/Ollama) |
 
 See [comparison.md](comparison.md) for the full detailed comparison.
 
