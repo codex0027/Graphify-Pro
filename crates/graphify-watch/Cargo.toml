@@ -1,0 +1,23 @@
+[package]
+name = "graphify-watch"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+graphify-core = { path = "../graphify-core" }
+graphify-detect = { path = "../graphify-detect" }
+graphify-extract = { path = "../graphify-extract" }
+graphify-build = { path = "../graphify-build" }
+graphify-cluster = { path = "../graphify-cluster" }
+graphify-analyze = { path = "../graphify-analyze" }
+graphify-export = { path = "../graphify-export" }
+notify.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+walkdir.workspace = true
+num_cpus.workspace = true

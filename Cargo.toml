@@ -1,0 +1,81 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/graphify-core",
+    "crates/graphify-detect",
+    "crates/graphify-extract",
+    "crates/graphify-build",
+    "crates/graphify-cluster",
+    "crates/graphify-analyze",
+    "crates/graphify-export",
+    "crates/graphify-watch",
+    "crates/graphify-cli",
+]
+
+[workspace.package]
+version = "0.3.0"
+edition = "2021"
+authors = ["Graphify Pro Team"]
+license = "MIT"
+repository = "https://github.com/codex0027/Graphify-Pro"
+description = "A blazing-fast Rust reimagining of Graphify — extract, analyze, and visualize codebase knowledge graphs with 36 language support, web API, and Neo4j/Obsidian exports."
+keywords = ["graph", "code-analysis", "knowledge-graph", "tree-sitter", "codebase", "visualization"]
+categories = ["development-tools", "command-line-utilities"]
+readme = "README.md"
+
+[workspace.dependencies]
+# Core
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+petgraph = "0.7"
+rayon = "1"
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# CLI
+clap = { version = "4", features = ["derive", "cargo"] }
+
+# File watching
+notify = "7"
+
+# AST parsing
+tree-sitter = "0.24"
+
+# Web server
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["fs", "cors"] }
+
+# Serialization formats
+toml = "0.8"
+csv = "1"
+
+# Hashing
+sha2 = "0.10"
+
+# Regex
+regex = "1"
+glob = "0.3"
+
+# Walk directory trees
+walkdir = "2"
+ignore = "0.4"
+
+# UUID for node IDs
+uuid = { version = "1", features = ["v4"] }
+
+# Chrono
+chrono = { version = "0.4", features = ["serde"] }
+
+# Random
+rand = "0.8"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# CPU count
+num_cpus = "1"

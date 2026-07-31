@@ -1,0 +1,34 @@
+# ── Rust build artifacts ────────────────────────────────────────────────────────
+/target/
+**/*.rs.bk
+*.pdb
+
+# ── Cargo lock (optional for libraries, keep for binaries) ─────────────────────
+# Cargo.lock is committed for workspace binaries
+
+# ── IDE / Editor ────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ── Graphify output ─────────────────────────────────────────────────────────────
+graphify-out/
+*.graph.json
+manifest.json
+~/.graphify/
+
+# ── Environment ─────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── OS ──────────────────────────────────────────────────────────────────────────
+Thumbs.db
+.DS_Store
+
+# ── Reference (not part of this project) ────────────────────────────────────────
+reference-graphify/
+comparison.md
