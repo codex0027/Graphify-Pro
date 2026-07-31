@@ -8,11 +8,12 @@ pub mod tree_sitter;
 use graphify_core::node::{GraphNode, NodeType};
 use graphify_core::edge::{EdgeRelation, GraphEdge};
 use graphify_core::confidence::Confidence;
+use serde::{Serialize, Deserialize};
 use std::collections::HashSet;
 use std::path::Path;
 
 /// Result of extracting a single file.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExtractionResult {
     /// Path of the extracted file
     pub file_path: String,

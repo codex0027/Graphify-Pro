@@ -1,21 +1,38 @@
 //! # LLM Semantic Pass — AI-powered community labeling & document analysis
 //!
-//! Calls OpenAI-compatible APIs to generate descriptive names for detected
-//! communities and extract architectural insights from the knowledge graph.
+//! Calls OpenAI, Anthropic, Gemini, Ollama, or any OpenAI-compatible API to
+//! generate descriptive names for detected communities and extract architectural
+//! insights from the knowledge graph.
+//!
+//! ## Supported providers
+//!
+//! | Provider | Env vars |
+//! |----------|----------|
+//! | **OpenAI** | `OPENAI_API_KEY` |
+//! | **Anthropic** | `ANTHROPIC_API_KEY` |
+//! | **Gemini** | `GEMINI_API_KEY` |
+//! | **Ollama** | `OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_API_KEY=ollama` |
+//! | **OpenAI-compatible** | `OPENAI_BASE_URL` + `OPENAI_API_KEY` |
 //!
 //! ## Configuration
 //!
-//! Set environment variables:
-//! - `OPENAI_API_KEY` — API key (required)
-//! - `OPENAI_BASE_URL` — custom endpoint (default: https://api.openai.com/v1)
-//!   Use `http://localhost:11434/v1` for Ollama, or any OpenAI-compatible endpoint
-//! - `GRAPHIFY_LLM_MODEL` — model name (default: gpt-4o-mini)
+//! - `GRAPHIFY_LLM_PROVIDER` — "openai", "anthropic", "gemini", or "ollama" (auto-detected if unset)
+//! - `GRAPHIFY_LLM_MODEL` — model name (provider-specific default if unset)
+//! - `GRAPHIFY_LLM_MAX_TOKENS` — max tokens (default: 256)
 //!
 //! ## Usage
 //!
 //! ```bash
 //! # OpenAI
 //! export OPENAI_API_KEY=sk-...
+//! graphify build . --llm
+//!
+//! # Anthropic
+//! export ANTHROPIC_API_KEY=sk-ant-...
+//! graphify build . --llm
+//!
+//! # Gemini
+//! export GEMINI_API_KEY=...
 //! graphify build . --llm
 //!
 //! # Ollama (local)
@@ -29,9 +46,21 @@ use anyhow::Context;
 use std::collections::HashMap;
 use std::process::Command;
 
+/// LLM provider backend.
+#[derive(Debug, Clone, PartialEq)]
+pub enum LlmProvider {
+    OpenAI,
+    Anthropic,
+    Gemini,
+    Ollama,
+    /// Any OpenAI-compatible endpoint (OpenRouter, Groq, Together, etc.)
+    OpenAICompatible,
+}
+
 /// LLM backend configuration.
 #[derive(Debug, Clone)]
 pub struct LlmConfig {
+    pub provider: LlmProvider,
     pub base_url: String,
     pub api_key: String,
     pub model: String,
@@ -41,13 +70,58 @@ pub struct LlmConfig {
 
 impl Default for LlmConfig {
     fn default() -> Self {
+        // Check explicit provider preference first, then auto-detect
+        let provider = match std::env::var("GRAPHIFY_LLM_PROVIDER").as_deref() {
+            Ok("anthropic") => LlmProvider::Anthropic,
+            Ok("gemini") => LlmProvider::Gemini,
+            Ok("ollama") => LlmProvider::Ollama,
+            Ok("openai") | Ok("openai_compatible") => LlmProvider::OpenAI,
+            _ => {
+                // Auto-detect from available API keys
+                if std::env::var("ANTHROPIC_API_KEY").is_ok() {
+                    LlmProvider::Anthropic
+                } else if std::env::var("GEMINI_API_KEY").is_ok() {
+                    LlmProvider::Gemini
+                } else if std::env::var("OPENAI_BASE_URL").map_or(false, |u| u.contains("11434")) {
+                    LlmProvider::Ollama
+                } else {
+                    LlmProvider::OpenAI
+                }
+            }
+        };
+
+        let (base_url, model) = match &provider {
+            LlmProvider::Anthropic => (
+                "https://api.anthropic.com/v1".into(),
+                "claude-3-haiku-20240307".into(),
+            ),
+            LlmProvider::Gemini => (
+                "https://generativelanguage.googleapis.com/v1beta".into(),
+                "gemini-2.0-flash".into(),
+            ),
+            LlmProvider::Ollama => (
+                "http://localhost:11434/v1".into(),
+                std::env::var("GRAPHIFY_LLM_MODEL").unwrap_or_else(|_| "llama3.2".into()),
+            ),
+            _ => (
+                std::env::var("OPENAI_BASE_URL")
+                    .unwrap_or_else(|_| "https://api.openai.com/v1".into()),
+                std::env::var("GRAPHIFY_LLM_MODEL")
+                    .unwrap_or_else(|_| "gpt-4o-mini".into()),
+            ),
+        };
+
+        let api_key = Self::detect_api_key(&provider);
+
         Self {
-            base_url: std::env::var("OPENAI_BASE_URL")
-                .unwrap_or_else(|_| "https://api.openai.com/v1".into()),
-            api_key: std::env::var("OPENAI_API_KEY").unwrap_or_default(),
-            model: std::env::var("GRAPHIFY_LLM_MODEL")
-                .unwrap_or_else(|_| "gpt-4o-mini".into()),
-            max_tokens: 256,
+            provider,
+            base_url,
+            api_key,
+            model,
+            max_tokens: std::env::var("GRAPHIFY_LLM_MAX_TOKENS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(256),
             temperature: 0.2,
         }
     }
@@ -58,10 +132,42 @@ impl LlmConfig {
         !self.api_key.is_empty()
     }
 
+    fn detect_api_key(provider: &LlmProvider) -> String {
+        match provider {
+            LlmProvider::Anthropic => std::env::var("ANTHROPIC_API_KEY").unwrap_or_default(),
+            LlmProvider::Gemini => std::env::var("GEMINI_API_KEY").unwrap_or_default(),
+            _ => std::env::var("OPENAI_API_KEY").unwrap_or_default(),
+        }
+    }
+
+    /// Create config for Ollama (local).
     pub fn ollama(model: &str) -> Self {
         Self {
+            provider: LlmProvider::Ollama,
             base_url: "http://localhost:11434/v1".into(),
             api_key: "ollama".into(),
+            model: model.to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// Create config for Anthropic.
+    pub fn anthropic(model: &str) -> Self {
+        Self {
+            provider: LlmProvider::Anthropic,
+            base_url: "https://api.anthropic.com/v1".into(),
+            api_key: std::env::var("ANTHROPIC_API_KEY").unwrap_or_default(),
+            model: model.to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// Create config for Gemini.
+    pub fn gemini(model: &str) -> Self {
+        Self {
+            provider: LlmProvider::Gemini,
+            base_url: "https://generativelanguage.googleapis.com/v1beta".into(),
+            api_key: std::env::var("GEMINI_API_KEY").unwrap_or_default(),
             model: model.to_string(),
             ..Default::default()
         }
@@ -78,7 +184,7 @@ pub struct LlmLabelResult {
 }
 
 /// Generate human-readable community labels using an LLM.
-/// Uses `curl` to call OpenAI-compatible APIs.
+/// Supports OpenAI, Anthropic, Gemini, Ollama, and OpenAI-compatible APIs via curl.
 pub fn label_communities_llm(
     config: &LlmConfig,
     communities: &[graphify_core::community::Community],
@@ -154,6 +260,15 @@ pub fn analyze_architecture_llm(
 // ── Internal: curl-based API calls ────────────────────────────────────────────
 
 fn call_llm_text(config: &LlmConfig, prompt: &str) -> anyhow::Result<String> {
+    match config.provider {
+        LlmProvider::Anthropic => call_anthropic(config, prompt),
+        LlmProvider::Gemini => call_gemini(config, prompt),
+        _ => call_openai_compatible(config, prompt),
+    }
+}
+
+/// OpenAI / Ollama / any OpenAI-compatible endpoint.
+fn call_openai_compatible(config: &LlmConfig, prompt: &str) -> anyhow::Result<String> {
     let body = serde_json::json!({
         "model": config.model,
         "messages": [{"role": "user", "content": prompt}],
@@ -168,7 +283,7 @@ fn call_llm_text(config: &LlmConfig, prompt: &str) -> anyhow::Result<String> {
         .arg("-H").arg("Content-Type: application/json")
         .arg("-d").arg(body.to_string())
         .output()
-        .context("curl not found. Install curl or set OPENAI_API_KEY.")?;
+        .context("curl not found. Install curl or use a different provider.")?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -179,6 +294,81 @@ fn call_llm_text(config: &LlmConfig, prompt: &str) -> anyhow::Result<String> {
         .context("Failed to parse LLM JSON response")?;
 
     let text = resp["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    Ok(text)
+}
+
+/// Anthropic Messages API: x-api-key header, different body format.
+fn call_anthropic(config: &LlmConfig, prompt: &str) -> anyhow::Result<String> {
+    let body = serde_json::json!({
+        "model": config.model,
+        "max_tokens": config.max_tokens,
+        "temperature": config.temperature,
+        "messages": [{"role": "user", "content": prompt}],
+    });
+
+    let url = format!("{}/messages", config.base_url);
+    let output = Command::new("curl")
+        .args(["-s", "-X", "POST", &url])
+        .arg("-H").arg(format!("x-api-key: {}", config.api_key))
+        .arg("-H").arg("Content-Type: application/json")
+        .arg("-H").arg("anthropic-version: 2023-06-01")
+        .arg("-d").arg(body.to_string())
+        .output()
+        .context("curl not found. Install curl or use a different provider.")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Anthropic API call failed: {}", stderr);
+    }
+
+    let resp: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .context("Failed to parse Anthropic JSON response")?;
+
+    // Anthropic returns content as array of blocks
+    let text = resp["content"][0]["text"]
+        .as_str()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    Ok(text)
+}
+
+/// Gemini API: x-goog-api-key header, different body format.
+fn call_gemini(config: &LlmConfig, prompt: &str) -> anyhow::Result<String> {
+    let body = serde_json::json!({
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }],
+        "generationConfig": {
+            "maxOutputTokens": config.max_tokens,
+            "temperature": config.temperature,
+        }
+    });
+
+    // Gemini URL format: /models/{model}:generateContent
+    let url = format!("{}/models/{}:generateContent?key={}", config.base_url, config.model, config.api_key);
+    let output = Command::new("curl")
+        .args(["-s", "-X", "POST", &url])
+        .arg("-H").arg("Content-Type: application/json")
+        .arg("-d").arg(body.to_string())
+        .output()
+        .context("curl not found. Install curl or use a different provider.")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Gemini API call failed: {}", stderr);
+    }
+
+    let resp: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .context("Failed to parse Gemini JSON response")?;
+
+    let text = resp["candidates"][0]["content"]["parts"][0]["text"]
         .as_str()
         .unwrap_or("")
         .trim()
@@ -207,23 +397,52 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_llm_config_default() {
+    fn test_llm_config_default_no_keys() {
+        // In test env no API keys are set, so default should be OpenAI with empty key
         let config = LlmConfig::default();
         // No API key set = not configured
         assert!(!config.is_configured() || std::env::var("OPENAI_API_KEY").is_ok());
+        assert_eq!(config.provider, LlmProvider::OpenAI);
     }
 
     #[test]
     fn test_llm_config_ollama() {
         let config = LlmConfig::ollama("llama3.2");
         assert!(config.is_configured());
+        assert_eq!(config.provider, LlmProvider::Ollama);
         assert_eq!(config.base_url, "http://localhost:11434/v1");
+        assert_eq!(config.model, "llama3.2");
+    }
+
+    #[test]
+    fn test_llm_config_anthropic() {
+        let config = LlmConfig::anthropic("claude-3-haiku-20240307");
+        assert_eq!(config.provider, LlmProvider::Anthropic);
+        assert_eq!(config.model, "claude-3-haiku-20240307");
+        assert_eq!(config.base_url, "https://api.anthropic.com/v1");
+    }
+
+    #[test]
+    fn test_llm_config_gemini() {
+        let config = LlmConfig::gemini("gemini-2.0-flash");
+        assert_eq!(config.provider, LlmProvider::Gemini);
+        assert_eq!(config.model, "gemini-2.0-flash");
     }
 
     #[test]
     fn test_label_communities_no_config() {
-        let config = LlmConfig { api_key: String::new(), ..Default::default() };
+        let config = LlmConfig { provider: LlmProvider::OpenAI, api_key: String::new(), ..Default::default() };
         let result = label_communities_llm(&config, &[], &[], 5);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_provider_auto_detection_openai() {
+        // Default in test env should be OpenAI (no special env vars set)
+        let config = LlmConfig::default();
+        // The default may be OpenAI or Anthropic/Gemini depending on env — but
+        // at minimum the base_url should be set
+        assert!(!config.base_url.is_empty());
+        assert!(!config.model.is_empty());
     }
 }

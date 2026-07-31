@@ -265,6 +265,7 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, 
     };
 
     let mut extractions = Vec::new();
+    let mut files_extracted = 0usize;
     if let Some(code_files) = detection.files.get(&graphify_detect::FileCategory::Code) {
         for file in code_files {
             let rel_path = file.relative_path.to_string_lossy().to_string();
@@ -273,26 +274,41 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, 
             let is_pdf = file.path.extension().map(|e| e == "pdf").unwrap_or(false);
             if is_pdf {
                 let result = graphify_extract::RegexExtractor::extract_pdf(&rel_path);
-                manifest.update(rel_path, "", result.language.clone());
+                let cached = serde_json::to_value(&result).ok();
+                manifest.update(rel_path, "", result.language.clone(), cached);
                 extractions.push(result);
+                files_extracted += 1;
                 continue;
             }
 
             match std::fs::read_to_string(&file.path) {
                 Ok(content) => {
-                    // Incremental cache check — always extract for correctness,
-                    // but track cache hits for reporting
+                    // ── Incremental cache: skip extraction if file unchanged ──
                     let is_cached = !force && manifest.is_unchanged(&rel_path, &content);
                     if is_cached {
-                        cache_hits += 1;
+                        // Reuse cached extraction result — no re-extraction needed
+                        if let Some(cached_json) = manifest.get_cached(&rel_path) {
+                            if let Ok(cached_result) = serde_json::from_value::<graphify_extract::ExtractionResult>(cached_json.clone()) {
+                                cache_hits += 1;
+                                extractions.push(cached_result);
+                                continue;
+                            }
+                            // Cache deserialization failed — warn and re-extract
+                            eprintln!("  ⚠️ Cache corrupted for {} — re-extracting", rel_path);
+                        }
+                        // Cache entry exists but deserialization failed — fall through to re-extract
                     }
+
+                    // Extract (first build or file changed)
                     let result = graphify_extract::RegexExtractor::extract_file(
                         &content,
                         &rel_path,
                         &config,
                     );
-                    manifest.update(rel_path, &content, result.language.clone());
+                    let cached = serde_json::to_value(&result).ok();
+                    manifest.update(rel_path, &content, result.language.clone(), cached);
                     extractions.push(result);
+                    files_extracted += 1;
                 }
                 Err(e) => {
                     eprintln!("  ⚠️ Failed to read {}: {}", file.path.display(), e);
@@ -302,9 +318,9 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, 
     }
 
     if cache_hits > 0 {
-        println!("⚡ {} files unchanged (cached)", cache_hits);
+        println!("⚡ {} files unchanged — skipped extraction (cached)", cache_hits);
     }
-    println!("📝 Extracted {} files", extractions.len());
+    println!("📝 Extracted {} files ({} cached)", files_extracted, cache_hits);
 
     // Add manifest deps as nodes
     for dep in &manifest_deps {
@@ -365,9 +381,11 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, 
                 Err(e) => eprintln!("  ⚠️ LLM pass failed: {}", e),
             }
         } else {
-            println!("⚠️  LLM pass skipped: OPENAI_API_KEY not set. Set it or use Ollama:");
-            println!("   export OPENAI_API_KEY=sk-...");
-            println!("   # or for local Ollama:");
+            println!("⚠️  LLM pass skipped: no API key configured. Set one of:");
+            println!("   export OPENAI_API_KEY=sk-...       # OpenAI");
+            println!("   export ANTHROPIC_API_KEY=sk-ant-... # Anthropic (Claude)");
+            println!("   export GEMINI_API_KEY=...           # Google Gemini");
+            println!("   # Or for local Ollama:");
             println!("   export OPENAI_BASE_URL=http://localhost:11434/v1");
             println!("   export OPENAI_API_KEY=ollama");
         }

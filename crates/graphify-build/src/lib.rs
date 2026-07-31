@@ -117,15 +117,19 @@ pub fn extract_manifest_deps(project_root: &Path) -> Vec<ManifestDep> {
     deps
 }
 
-/// Manifest entry for cached file state.
+/// Manifest entry for cached file state — includes full extraction result
+/// so unchanged files can truly skip re-extraction on rebuild.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManifestEntry {
     pub path: String,
     pub hash: String,
     pub language: String,
+    /// Cached extraction result (serialized as JSON) for skip-extraction on cache hit.
+    pub cached_result: Option<serde_json::Value>,
 }
 
-/// Build manifest for incremental caching.
+/// Build manifest for incremental caching — stores file hashes + cached
+/// extraction results so unchanged files skip extraction entirely.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildManifest {
     pub version: String,
@@ -147,13 +151,18 @@ impl BuildManifest {
     }
 
     fn new() -> Self {
-        Self { version: "1.0".into(), project_root: String::new(), files: Vec::new() }
+        Self { version: "2.0".into(), project_root: String::new(), files: Vec::new() }
     }
 
     /// Check if a file has changed since last build.
     pub fn is_unchanged(&self, path: &str, content: &str) -> bool {
         let hash = Self::hash_content(content);
-        self.files.iter().any(|e| e.path == path && e.hash == hash)
+        self.files.iter().any(|e| e.path == path && e.hash == hash && e.cached_result.is_some())
+    }
+
+    /// Retrieve a cached extraction result for a file (must call is_unchanged first).
+    pub fn get_cached(&self, path: &str) -> Option<&serde_json::Value> {
+        self.files.iter().find(|e| e.path == path).and_then(|e| e.cached_result.as_ref())
     }
 
     /// Compute SHA-256 hash of file content.
@@ -163,12 +172,12 @@ impl BuildManifest {
         format!("{:x}", hasher.finalize())
     }
 
-    /// Update entry for a file.
-    pub fn update(&mut self, path: String, content: &str, language: String) {
+    /// Update entry for a file — stores hash + full extraction result for future cache hits.
+    pub fn update(&mut self, path: String, content: &str, language: String, cached_result: Option<serde_json::Value>) {
         let hash = Self::hash_content(content);
         // Remove old entry if exists
         self.files.retain(|e| e.path != path);
-        self.files.push(ManifestEntry { path, hash, language });
+        self.files.push(ManifestEntry { path, hash, language, cached_result });
     }
 
     /// Save manifest to disk.
@@ -428,5 +437,109 @@ mod tests {
         assert_eq!(graph.nodes.len(), 2);
         assert_eq!(graph.edges.len(), 1);
         assert_eq!(graph.metadata.total_files, 1);
+    }
+
+    // ── Incremental Caching Tests ──────────────────────────────────────────
+
+    #[test]
+    fn test_manifest_is_unchanged() {
+        let mut manifest = BuildManifest::new();
+        manifest.update(
+            "src/lib.rs".into(),
+            "fn main() {}",
+            "Rust".into(),
+            Some(serde_json::json!({"nodes": [], "edges": []})),
+        );
+
+        // Same content = unchanged AND has cached_result
+        assert!(manifest.is_unchanged("src/lib.rs", "fn main() {}"));
+        // Different content = changed
+        assert!(!manifest.is_unchanged("src/lib.rs", "fn main() { println!(); }"));
+        // Unknown file = changed
+        assert!(!manifest.is_unchanged("src/other.rs", "fn main() {}"));
+    }
+
+    #[test]
+    fn test_manifest_get_cached() {
+        let mut manifest = BuildManifest::new();
+        let cached = serde_json::json!({"nodes": [{"id": "n1"}], "edges": []});
+        manifest.update("src/lib.rs".into(), "content", "Rust".into(), Some(cached.clone()));
+
+        let retrieved = manifest.get_cached("src/lib.rs");
+        assert!(retrieved.is_some());
+        assert_eq!(retrieved.unwrap(), &cached);
+    }
+
+    #[test]
+    fn test_manifest_hash_content() {
+        let h1 = BuildManifest::hash_content("hello");
+        let h2 = BuildManifest::hash_content("hello");
+        let h3 = BuildManifest::hash_content("world");
+        assert_eq!(h1, h2);
+        assert_ne!(h1, h3);
+        // SHA-256 hex is 64 chars
+        assert_eq!(h1.len(), 64);
+    }
+
+    #[test]
+    fn test_manifest_update_replaces_old() {
+        let mut manifest = BuildManifest::new();
+        manifest.update("a.rs".into(), "v1", "Rust".into(), None);
+        manifest.update("a.rs".into(), "v2", "Rust".into(), None);
+        // Only one entry for a.rs
+        assert_eq!(manifest.files.iter().filter(|e| e.path == "a.rs").count(), 1);
+        // Hash should be from "v2"
+        assert_eq!(
+            manifest.files.iter().find(|e| e.path == "a.rs").unwrap().hash,
+            BuildManifest::hash_content("v2")
+        );
+    }
+
+    #[test]
+    fn test_manifest_without_cached_result_not_unchanged() {
+        let mut manifest = BuildManifest::new();
+        // Update without cached_result
+        manifest.update("src/lib.rs".into(), "fn main() {}", "Rust".into(), None);
+        // Content matches but no cached_result = not considered unchanged
+        assert!(!manifest.is_unchanged("src/lib.rs", "fn main() {}"));
+    }
+
+    #[test]
+    fn test_prune_dangling_edges() {
+        let nodes = vec![
+            GraphNode::new("a", "A", NodeType::Function),
+            GraphNode::new("b", "B", NodeType::Function),
+        ];
+        let mut edges = vec![
+            GraphEdge::new("a", "b", EdgeRelation::Calls),
+            GraphEdge::new("a", "c", EdgeRelation::Calls), // c doesn't exist
+        ];
+        let pruned = prune_dangling_edges(&nodes, &mut edges);
+        assert_eq!(pruned, 1);
+        assert_eq!(edges.len(), 1);
+        assert_eq!(edges[0].source, "a");
+        assert_eq!(edges[0].target, "b");
+    }
+
+    #[test]
+    fn test_manifest_save_load_roundtrip() {
+        let tmp = std::env::temp_dir().join("graphify_test_manifest.json");
+        let mut manifest = BuildManifest::new();
+        manifest.update(
+            "test.rs".into(),
+            "fn test() {}",
+            "Rust".into(),
+            Some(serde_json::json!({"nodes": [{"id": "x"}]})),
+        );
+        manifest.project_root = "/tmp/test".into();
+        manifest.save(&tmp).unwrap();
+
+        let loaded = BuildManifest::load(&tmp);
+        assert_eq!(loaded.project_root, "/tmp/test");
+        assert!(loaded.is_unchanged("test.rs", "fn test() {}"));
+        assert!(loaded.get_cached("test.rs").is_some());
+
+        // Cleanup
+        let _ = std::fs::remove_file(&tmp);
     }
 }

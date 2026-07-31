@@ -2,25 +2,25 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/rust-stable%201.82%2B-orange?logo=rust" alt="Rust">
-  <img src="https://img.shields.io/badge/version-0.4.0-blue" alt="Version">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/version-0.5.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-green" alt="Dual License">
   <img src="https://img.shields.io/badge/languages-48-brightgreen" alt="48 Languages">
   <img src="https://img.shields.io/badge/crates-9-purple" alt="9 Crates">
 </p>
 
 **Graphify Pro** is a blazing-fast Rust reimagining of [Graphify](https://graphify.net) — a tool that extracts, analyzes, and visualizes **codebase knowledge graphs**. It transforms your source code into a structured, queryable graph of nodes (files, classes, functions) and edges (imports, calls, inheritance).
 
-> **250x faster startup** than the Python original. **50-150MB memory** vs 200-500MB. **36 languages**. **REST API**. **Neo4j/Obsidian exports**.
+> **250x faster startup** than the Python original. **50-150MB memory** vs 200-500MB. **48 languages**. **REST API**. **Neo4j/Obsidian exports**. **Multi-provider LLM pass** (OpenAI, Anthropic, Gemini, Ollama).
 
 ---
 
 ## ✨ Features
 
 ### 🔍 Extraction
-- **48 languages** — 27 via full tree-sitter ASTs + 21 via regex fallback
+- **48 languages** — 27 via full tree-sitter AST + 21 via regex/generic fallback
 - **Config-driven tree-sitter** — single generic handler for 27 grammars
 - **Rationale extraction** — captures `# NOTE:`, `# TODO:`, design comments
-- **Incremental caching** — SHA-256 manifest.json, skip unchanged files on rebuild
+- **Incremental caching** — SHA-256 manifest.json; unchanged files skip extraction entirely (v2.0 manifest)
 - **Parallel extraction** — rayon thread pool, auto-detects CPU count
 - **Manifest introspection** — parses Cargo.toml, pyproject.toml, go.mod, package.json
 
@@ -39,6 +39,12 @@
 - **Code quality** — dead code detection, circular dependencies, god class identification
 - **Architecture detection** — heuristic style classification
 - **Path tracing + explain** — find connections between any two nodes
+
+### 🤖 LLM Semantic Pass
+- **Multi-provider** — OpenAI, Anthropic, Gemini, Ollama, or any OpenAI-compatible endpoint
+- **Auto-detection** — picks provider from env vars (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`)
+- **Community labeling** — AI-generated names + descriptions for detected clusters
+- **Architecture insights** — LLM-powered architectural analysis of the codebase
 
 ### 📤 Export
 | Format | Description |
@@ -136,11 +142,15 @@ graphify watch [PATH]              # Auto-rebuild on file changes
 
 ## 📊 Supported Languages
 
-### Tree-Sitter (27) — Full AST
+### Tree-Sitter (27) — Full AST parsing
+> These languages get deep semantic analysis via tree-sitter: nested types, generics, decorators, and precise location data.
+
 Rust, Python, JavaScript, TypeScript, TSX, Go, Java, C, C++, C#, Swift, Ruby, PHP, Scala, Haskell, Julia, Bash, HCL (Terraform), Elixir, Zig, OCaml, JSON, YAML, CSS, HTML, Solidity, Verilog
 
 ### Regex Fallback (21) — Function/class/import extraction
-Kotlin, Lua, Dart, SQL, R, Erlang, TOML, Vue, Markdown, Apex, Blade, Razor, Pascal, DreamMaker, Groovy, Svelte, Astro, PowerShell, Fortran, Objective-C, HCL
+> These languages use regex-based extraction: identifies functions, classes, and imports, but without deep AST accuracy.
+
+Kotlin, Lua, Dart, SQL, R, Erlang, TOML, Vue, Markdown, Apex, Blade, Razor, Pascal, DreamMaker, Groovy, Svelte, Astro, PowerShell, Fortran, Objective-C, DM
 
 ---
 
@@ -206,14 +216,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
 
 ## 🆚 Comparison with Original Graphify
 
-Graphify Pro closes every major feature gap while adding unique advantages:
+Graphify Pro closes every major feature gap while adding unique advantages. *Note: language counts distinguish full tree-sitter AST parsing from regex-based extraction.*
 
 | Feature | Graphify | Graphify Pro |
 |---------|:--------:|:------------:|
-| Languages | 36 | ✅ **48** |
-| Tree-sitter parsing | ✅ | ✅ |
-| Incremental caching | ✅ | ✅ |
-| Web API server | ❌ | ✅ |
+| Languages | 36+ | ✅ **48** (27 AST + 21 regex) |
+| Tree-sitter parsing | ✅ | ✅ 27 grammars |
+| Incremental caching | ✅ mature | ✅ SHA-256 skip-extraction (v2.0 manifest) |
+| Web API server | MCP only | ✅ REST + D3 HTML |
 | Neo4j export | ✅ | ✅ |
 | Obsidian wiki | ✅ | ✅ |
 | PR impact analysis | ✅ | ✅ |
@@ -224,8 +234,8 @@ Graphify Pro closes every major feature gap while adding unique advantages:
 | Startup speed | 500ms | **2ms** |
 | Memory | 200-500MB | **50-150MB** |
 | AI editor hooks | 20+ | Web API (extensible) |
-| Multimedia (PDF/video) | ✅ | ✅ PDF extraction built-in (video/images via LLM vision API) |
-| LLM semantic pass | ✅ | ✅ LLM-powered community labeling + architecture analysis (OpenAI/Ollama) |
+| Multimedia (PDF/video) | ✅ extensive | ✅ PDF extraction built-in |
+| LLM semantic pass | ✅ | ✅ Multi-provider (OpenAI, Anthropic, Gemini, Ollama) |
 
 See [comparison.md](comparison.md) for the full detailed comparison.
 
@@ -233,7 +243,7 @@ See [comparison.md](comparison.md) for the full detailed comparison.
 
 ## 📄 License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT OR Apache-2.0 — see [LICENSE-MIT](LICENSE) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
 ---
 

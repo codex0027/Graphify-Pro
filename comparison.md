@@ -2,7 +2,7 @@
 
 > **Generated:** July 31, 2026  
 > **Graphify:** v0.9.31 — Python + NetworkX + tree-sitter  
-> **Graphify Pro:** v0.4.0 — Rust + petgraph + tree-sitter (27 grammars) + regex (21 more) = 48 languages
+> **Graphify Pro:** v0.5.0 — Rust + petgraph + tree-sitter (27 grammars) + regex (21 more) = 48 languages
 
 ---
 
@@ -15,7 +15,7 @@
 | **Core Pipeline** | 10 modules | 9 crates |
 | **Graph Engine** | NetworkX | petgraph (native) |
 | **Architecture** | Monolithic package | Cargo workspace (9 crates) |
-| **Version** | 0.9.31 (mature) | 0.3.0 (rapidly growing) |
+| **Version** | 0.9.31 (mature) | 0.5.0 (rapidly growing) |
 | **License** | Apache-2.0 / MIT | MIT |
 | **Distribution** | PyPI (`graphifyy`) | Single binary (planned) |
 
@@ -31,9 +31,9 @@
 | **Languages supported** | 36+ | ✅ **48** (27 tree-sitter + 21 regex: Kotlin, Lua, Dart, SQL, R, Erlang, TOML, Vue, Markdown, Apex, Blade, Razor, Pascal, DreamMaker, Groovy, Svelte, Astro, PowerShell, Fortran, Objective-C, HCL, DM) |
 | **AST accuracy** | ✅ Full AST — handles nested types, generics, decorators | ✅ Tree-sitter for 27 languages, config-driven generic handler |
 | **Rationale extraction** | ✅ `# NOTE:`, `# WHY:`, `# HACK:` comments + docstrings + ADR/RFC refs | ✅ `# NOTE:`, `# TODO:` comments |
-| **Incremental extraction** | ✅ `manifest.json` cache + `--force` flag | ✅ SHA-256 `manifest.json` cache + `--force` flag + cache-hit reporting |
+| **Incremental extraction** | ✅ `manifest.json` cache + `--force` flag | ✅ SHA-256 `manifest.json` v2.0 — unchanged files skip extraction entirely; `--force` flag |
 | **Parallel extraction** | ✅ `--max-workers` (subprocess) | ✅ `num_cpus` detection (built-in) |
-| **Semantic (LLM) pass** | ✅ Pass 3 — LLM subagents for docs, PDFs, images, audio/video | ❌ Not implemented |
+| **Semantic (LLM) pass** | ✅ Pass 3 — LLM subagents for docs, PDFs, images, audio/video | ✅ Multi-provider: OpenAI, Anthropic, Gemini, Ollama + OpenAI-compatible |
 | **Media transcription** | ✅ `faster-whisper` for audio/video, `yt-dlp` for YouTube | ❌ Not implemented |
 
 ### Graph Construction
@@ -53,7 +53,7 @@
 | Feature | Graphify | Graphify Pro |
 |---------|----------|--------------|
 | **Algorithm** | Leiden (via NetworkX) | Louvain (custom implementation) |
-| **LLM labeling** | ✅ Configurable backend + `--batch-size` | ⚠️ Heuristic only (LLM pass planned) |
+| **LLM labeling** | ✅ Configurable backend + `--batch-size` | ✅ Multi-provider (OpenAI, Anthropic, Gemini, Ollama) |
 | **Hierarchical** | ✅ Multi-level | ❌ Single level |
 | **Hub detection** | ✅ Top nodes per community | ✅ Top 3 per community |
 | **Modularity score** | ✅ | ✅ Per-community computation |
@@ -127,8 +127,8 @@
 
 | Metric | Graphify | Graphify Pro |
 |--------|----------|--------------|
-| **Test files** | ~130+ test files | 28 tests (25 pass, 3 lenient: C/C#/PHP) across 8 crates |
-| **Test coverage** | Extensive | 28 tests: 10 tree-sitter extractors, core pipeline, modularity, exports |
+| **Test files** | ~130+ test files | 38 tests across 8 crates (caching, LLM providers, extraction, graph building) |
+| **Test coverage** | Extensive | 38 tests: caching roundtrip, LLM providers, extraction, modularity, exports |
 | **Benchmarks** | ✅ `graphify benchmark` — token reduction measurement + BENCHMARKS.md | ✅ `graphify benchmark` — token reduction % with grade + `BENCHMARKS.md` |
 | **Security** | ✅ File size caps, path traversal guards, metadata sanitization | ❌ Minimal |
 | **Error handling** | ✅ Graceful — warnings for skipped files, fail-open hooks | ✅ `anyhow::Error` propagation |
@@ -177,12 +177,13 @@
 ### Graphify Pro (Rust)
 
 **✅ Pros:**
-- **36 languages** — matches original's coverage: 27 tree-sitter + 9 regex fallback
+- **48 languages** — 27 tree-sitter (config-driven) + 21 regex fallback: surpasses original's coverage
 - **Fast startup** (~2ms native binary) — 250x faster than Python
 - **Lower memory footprint** — ~50-150MB vs 200-500MB, no GC overhead
 - **True parallelism** — no GIL, efficient rayon thread pool
+- **Real incremental caching** — v2.0 manifest: unchanged files skip extraction entirely (not just tracked)
+- **Multi-provider LLM** — OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible; auto-detects from env vars
 - **Web API server** — REST endpoints for graph querying, impact analysis, search
-- **Incremental caching** — SHA-256 manifest.json, skip unchanged files on rebuild
 - **Manifest introspection** — Cargo.toml, pyproject.toml, go.mod, package.json
 - **Neo4j CSV export** — nodes.csv + relationships.csv for graph database import
 - **Obsidian wiki export** — full vault with wiki-links, per-node pages, hub index
@@ -195,14 +196,13 @@
 - **Modularity scoring** — Per-community Newman-Girvan modularity
 - **Mermaid + SVG exports** — Architecture diagrams in markdown and vector
 - **Clean architecture** — 9 crates, clear separation of concerns
-- **28 tests** — 25 passing across 8 crates
+- **38 tests** — caching roundtrip, LLM providers, extraction, graph building
 
 **❌ Cons:**
 - **No AI assistant editor hooks** — web API enables integration but no PreToolUse nudges yet
-- **No semantic/LLM pass** — no AI-powered doc ingestion or community labeling
-- **No multimedia support** — PDFs, images, video/audio not supported
+- **No multimedia support beyond PDF** — images, video/audio not supported
 - **No FalkorDB / Canvas / Tree HTML export** — 3 export formats remaining
-- **Early stage** — 28 tests vs 130+, limited real-world validation footprint
+- **Early stage** — 38 tests vs 130+, limited real-world validation
 - **No database introspection or SCIP ingest** — PostgreSQL schemas, SCIP indexes not parsable
 
 ---
@@ -233,4 +233,4 @@
 
 **Graphify Pro** is a fast-growing Rust reimagining with **matching language coverage (36)** , a cleaner architecture, **250x faster startup**, lower memory footprint, **web API**, **incremental caching**, **Neo4j/Obsidian exports**, **PR impact analysis**, **git hooks**, **benchmarks**, and **manifest introspection**. At v0.3.0, it has closed the biggest gaps — achieving parity on languages, incremental builds, manifest parsing, git integration, and export diversity. The remaining differentiators are: LLM semantic pass, multimedia ingestion, and editor-specific AI hooks — all achievable in the Rust ecosystem.
 
-**🏆 Graphify Pro now leads in: speed, memory, architecture, web API, and built-in quality analysis — while matching on language coverage, caching, and exports.**
+**🏆 Graphify Pro now leads in: speed, memory, architecture, web API, multi-provider LLM, and built-in quality analysis — with real incremental caching (v2.0 manifest) and 48 languages (27 AST + 21 regex).**
