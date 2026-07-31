@@ -2,9 +2,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/rust-stable%201.82%2B-orange?logo=rust" alt="Rust">
-  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.4.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
-  <img src="https://img.shields.io/badge/languages-36-brightgreen" alt="36 Languages">
+  <img src="https://img.shields.io/badge/languages-48-brightgreen" alt="48 Languages">
   <img src="https://img.shields.io/badge/crates-9-purple" alt="9 Crates">
 </p>
 
@@ -17,7 +17,7 @@
 ## ✨ Features
 
 ### 🔍 Extraction
-- **36 languages** — 27 via full tree-sitter ASTs + 9 via regex fallback
+- **48 languages** — 27 via full tree-sitter ASTs + 21 via regex fallback
 - **Config-driven tree-sitter** — single generic handler for 27 grammars
 - **Rationale extraction** — captures `# NOTE:`, `# TODO:`, design comments
 - **Incremental caching** — SHA-256 manifest.json, skip unchanged files on rebuild
@@ -139,8 +139,8 @@ graphify watch [PATH]              # Auto-rebuild on file changes
 ### Tree-Sitter (27) — Full AST
 Rust, Python, JavaScript, TypeScript, TSX, Go, Java, C, C++, C#, Swift, Ruby, PHP, Scala, Haskell, Julia, Bash, HCL (Terraform), Elixir, Zig, OCaml, JSON, YAML, CSS, HTML, Solidity, Verilog
 
-### Regex Fallback (9) — Function/class/import extraction
-Kotlin, Lua, Dart, SQL, R, Erlang, TOML, Vue, Markdown
+### Regex Fallback (21) — Function/class/import extraction
+Kotlin, Lua, Dart, SQL, R, Erlang, TOML, Vue, Markdown, Apex, Blade, Razor, Pascal, DreamMaker, Groovy, Svelte, Astro, PowerShell, Fortran, Objective-C, HCL
 
 ---
 
@@ -210,7 +210,7 @@ Graphify Pro closes every major feature gap while adding unique advantages:
 
 | Feature | Graphify | Graphify Pro |
 |---------|:--------:|:------------:|
-| Languages | 36 | ✅ 36 |
+| Languages | 36 | ✅ **48** |
 | Tree-sitter parsing | ✅ | ✅ |
 | Incremental caching | ✅ | ✅ |
 | Web API server | ❌ | ✅ |

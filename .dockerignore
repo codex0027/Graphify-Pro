@@ -1,0 +1,7 @@
+# Exclude build artifacts from Docker context
+target/
+graphify-out/
+**/target/
+**/graphify-out/
+reference-graphify/
+.git/

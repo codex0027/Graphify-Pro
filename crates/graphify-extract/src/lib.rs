@@ -1013,7 +1013,7 @@ impl RegexExtractor {
             "js" | "jsx" | "cjs" | "mjs" => Self::extract_js(content, file_path, false),
             "ts" | "tsx" | "mts" | "cts" => Self::extract_js(content, file_path, true),
             "go" => Self::extract_go(content, file_path),
-            // Generic extraction for 9 additional languages via regex
+            // Generic extraction for 15 additional languages via regex
             "kt" | "kts" => Self::extract_generic(content, file_path, "Kotlin", config),
             "lua" => Self::extract_generic(content, file_path, "Lua", config),
             "dart" => Self::extract_generic(content, file_path, "Dart", config),
@@ -1023,6 +1023,18 @@ impl RegexExtractor {
             "toml" => Self::extract_toml(content, file_path),
             "vue" => Self::extract_generic(content, file_path, "Vue", config),
             "md" | "mdx" => Self::extract_markdown(content, file_path),
+            // Additional regex fallbacks for parity with original Graphify
+            "cls" | "trigger" => Self::extract_generic(content, file_path, "Apex", config),
+            "blade" => Self::extract_generic(content, file_path, "Blade", config),
+            "cshtml" | "razor" => Self::extract_generic(content, file_path, "Razor", config),
+            "pas" | "pp" => Self::extract_generic(content, file_path, "Pascal", config),
+            "dm" | "dme" => Self::extract_generic(content, file_path, "DreamMaker", config),
+            "groovy" | "gvy" | "gy" | "gsh" => Self::extract_generic(content, file_path, "Groovy", config),
+            "svelte" => Self::extract_generic(content, file_path, "Svelte", config),
+            "astro" => Self::extract_generic(content, file_path, "Astro", config),
+            "ps1" | "psm1" | "psd1" => Self::extract_generic(content, file_path, "PowerShell", config),
+            "f" | "f90" | "f95" | "f03" | "f08" => Self::extract_generic(content, file_path, "Fortran", config),
+            "m" | "mm" => Self::extract_generic(content, file_path, "Objective-C", config),
             _ => ExtractionResult {
                 file_path: file_path.to_string(),
                 nodes: vec![GraphNode {
