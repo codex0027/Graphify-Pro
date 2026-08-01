@@ -1144,6 +1144,103 @@ pub fn sanitize_id(s: &str) -> String {
 mod tests {
     use super::*;
 
+    // ── PDF Extraction Tests ─────────────────────────────────────────────────
+
+    #[test]
+    fn test_extract_pdf_basic_document_node() {
+        // Create a temp file that acts as a PDF stub
+        let tmp = std::env::temp_dir().join("graphify_test_basic.pdf");
+        std::fs::write(&tmp, "%PDF-1.4\nFake PDF content").unwrap();
+
+        let result = RegexExtractor::extract_pdf(tmp.to_str().unwrap());
+
+        // Should always create at least one Document node
+        assert!(!result.nodes.is_empty(), "PDF extraction must create at least one node");
+        assert_eq!(result.language, "PDF");
+        assert_eq!(result.nodes[0].node_type, NodeType::Document);
+        assert!(result.nodes[0].metadata.is_some(), "PDF node should have metadata");
+
+        let meta = result.nodes[0].metadata.as_ref().unwrap();
+        assert_eq!(meta["format"], "PDF");
+        assert!(meta["file_size_bytes"].as_u64().unwrap() > 0);
+
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_extract_pdf_section_detection() {
+        // Create a temp file with content that triggers section detection
+        let tmp = std::env::temp_dir().join("graphify_test_sections.pdf");
+        let content = "%PDF-1.4\nIntroduction to Graphs\n\nChapter One: Getting Started\n\nstream\nendobj\nPage 1\n";
+        std::fs::write(&tmp, content).unwrap();
+
+        let result = RegexExtractor::extract_pdf(tmp.to_str().unwrap());
+
+        // "Introduction to Graphs" matches the heading regex (capitalized, 3-80 chars)
+        // "Chapter One: Getting Started" also matches
+        // "Page 1" should be filtered out (contains "Page")
+        // "stream" and "endobj" should be filtered out
+        let section_count = result.nodes.len() - 1; // minus the main Document node
+        // We expect at least 2 sections from the test content
+        assert_eq!(section_count, 2, "Expected exactly 2 sections (Page/stream/endobj filtered)");
+
+        // Verify sections are Document type with Contains edges
+        let has_section_edges = result.edges.iter().any(|e| {
+            e.relation == EdgeRelation::Contains && e.context.as_deref() == Some("section")
+        });
+        assert!(has_section_edges, "Should have Contains edges for sections");
+
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_extract_pdf_nonexistent_file() {
+        let result = RegexExtractor::extract_pdf("/nonexistent/path/test.pdf");
+
+        // Should still create a Document node gracefully
+        assert!(!result.nodes.is_empty());
+        assert_eq!(result.nodes[0].node_type, NodeType::Document);
+        assert_eq!(result.language, "PDF");
+
+        // File size should be 0 for nonexistent files
+        let meta = result.nodes[0].metadata.as_ref().unwrap();
+        assert_eq!(meta["file_size_bytes"].as_u64().unwrap(), 0);
+
+        // No errors reported (handles gracefully)
+        assert!(result.errors.is_empty());
+    }
+
+    #[test]
+    fn test_extract_pdf_empty_file() {
+        let tmp = std::env::temp_dir().join("graphify_test_empty.pdf");
+        std::fs::write(&tmp, "").unwrap();
+
+        let result = RegexExtractor::extract_pdf(tmp.to_str().unwrap());
+
+        assert!(!result.nodes.is_empty());
+        assert_eq!(result.language, "PDF");
+        // Empty file = just the document node, no sections
+        assert_eq!(result.nodes.len(), 1, "Empty PDF should have exactly 1 node");
+
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_extract_pdf_confidence_is_extracted() {
+        let tmp = std::env::temp_dir().join("graphify_test_confidence.pdf");
+        std::fs::write(&tmp, "%PDF\nSome Research Paper Title Here").unwrap();
+
+        let result = RegexExtractor::extract_pdf(tmp.to_str().unwrap());
+
+        for node in &result.nodes {
+            assert_eq!(node.confidence, Confidence::Extracted, "PDF nodes should be Extracted confidence");
+        }
+
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    // ── Existing tests ───────────────────────────────────────────────────────
+
     #[test]
     fn test_extract_python() {
         let content = r#"

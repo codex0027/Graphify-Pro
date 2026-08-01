@@ -12,14 +12,14 @@ name = "graphify"
 path = "src/main.rs"
 
 [dependencies]
-graphify-core = { path = "../graphify-core" }
-graphify-detect = { path = "../graphify-detect" }
-graphify-extract = { path = "../graphify-extract" }
-graphify-build = { path = "../graphify-build" }
-graphify-cluster = { path = "../graphify-cluster" }
-graphify-analyze = { path = "../graphify-analyze" }
-graphify-export = { path = "../graphify-export" }
-graphify-watch = { path = "../graphify-watch" }
+graphify-core = { version = "0.6.1", path = "../graphify-core" }
+graphify-detect = { version = "0.6.1", path = "../graphify-detect" }
+graphify-extract = { version = "0.6.1", path = "../graphify-extract" }
+graphify-build = { version = "0.6.1", path = "../graphify-build" }
+graphify-cluster = { version = "0.6.1", path = "../graphify-cluster" }
+graphify-analyze = { version = "0.6.1", path = "../graphify-analyze" }
+graphify-export = { version = "0.6.1", path = "../graphify-export" }
+graphify-watch = { version = "0.6.1", path = "../graphify-watch" }
 clap.workspace = true
 serde.workspace = true
 serde_json.workspace = true
