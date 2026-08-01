@@ -2,6 +2,18 @@
 
 All notable changes to Graphify Pro will be documented in this file.
 
+## [0.6.1] — 2026-08-01
+
+### Added
+- **GitHub Release workflow** (`.github/workflows/release.yml`): Multi-platform builds for Linux x64, macOS x64 (Intel), macOS ARM64 (Apple Silicon), Windows x64 on `v*` tag push
+- **15 comprehensive symbol resolution tests**: Python (`from X import Y`), Rust (`use` modules/functions/paths with `::`), JavaScript (`import`/`require`), deduplication, circular imports, empty graphs, non-import edges, external libs, edge weights
+- **`normalize_symbol` fix**: Double-trim to handle trailing spaces after punctuation stripping
+- **All 9 crates verified for crates.io** — `cargo publish --dry-run` passes for every crate
+
+### Changed
+- `test_non_code_nodes_not_in_symbol_table` renamed to `test_file_nodes_resolve_via_both_paths`
+- macOS Release runner split: `macos-13` (Intel native) + `macos-latest` (ARM native) instead of single cross-compile
+
 ## [0.6.0] — 2026-08-01
 
 ### Added

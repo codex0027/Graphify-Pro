@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Linux x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: graphify-linux-x86_64
+            ext: ""
+
+          # macOS x86_64 (Intel — native on macos-13)
+          - os: macos-13
+            target: x86_64-apple-darwin
+            artifact: graphify-macos-x86_64
+            ext: ""
+
+          # macOS ARM (Apple Silicon — native on macos-latest)
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: graphify-macos-arm64
+            ext: ""
+
+          # Windows x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: graphify-windows-x86_64
+            ext: ".exe"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Rename binary
+        shell: bash
+        run: |
+          cp target/${{ matrix.target }}/release/graphify${{ matrix.ext }} \
+             ${{ matrix.artifact }}${{ matrix.ext }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}${{ matrix.ext }}
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Show artifacts
+        run: ls -laR
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Graphify Pro ${{ github.ref_name }}
+          body: |
+            ## Graphify Pro ${{ github.ref_name }}
+
+            A blazing-fast Rust reimagining of Graphify — extract, analyze, and visualize codebase knowledge graphs.
+
+            ### Downloads
+            - `graphify-linux-x86_64` — Linux (x86_64)
+            - `graphify-macos-x86_64` — macOS (Intel)
+            - `graphify-macos-arm64` — macOS (Apple Silicon)
+            - `graphify-windows-x86_64.exe` — Windows (x86_64)
+
+            ### Install
+            ```bash
+            # Linux / macOS
+            chmod +x graphify-*
+            ./graphify-linux-x86_64 --version
+
+            # Or move to PATH
+            sudo mv graphify-linux-x86_64 /usr/local/bin/graphify
+            ```
+
+            ### Quick Start
+            ```bash
+            graphify build .
+            graphify serve
+            ```
+
+            [Full documentation](https://github.com/codex0027/Graphify-Pro#readme)
+          files: |
+            graphify-linux-x86_64/graphify-linux-x86_64
+            graphify-macos-x86_64/graphify-macos-x86_64
+            graphify-macos-arm64/graphify-macos-arm64
+            graphify-windows-x86_64/graphify-windows-x86_64.exe
+          draft: false
+          prerelease: false
+          generate_release_notes: true
