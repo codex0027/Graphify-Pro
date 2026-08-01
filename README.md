@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/codex0027/Graphify-Pro"><img src="https://img.shields.io/badge/Graphify-Pro-58a6ff?style=for-the-badge&logo=rust&logoColor=white" alt="Graphify Pro"/></a>
+  <img src="docs/logo.svg" width="500" height="167" alt="Graphify Pro"/>
 </p>
 
 <p align="center">

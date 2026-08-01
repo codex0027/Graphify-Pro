@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#161b22;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#58a6ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#79c0ff;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="godGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f78166;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffa198;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#58a6ff;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#79c0ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a5d6ff;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="200" rx="16" fill="url(#bgGrad)" />
+
+  <!-- Graph nodes (left side - icon) -->
+  <!-- Big god node -->
+  <circle cx="100" cy="95" r="18" fill="url(#godGrad)" stroke="#f78166" stroke-width="2" opacity="0.9" filter="url(#glow)" />
+  
+  <!-- Connecting edges -->
+  <line x1="118" y1="95" x2="152" y2="60" stroke="#30363d" stroke-width="1.5" />
+  <line x1="118" y1="95" x2="152" y2="95" stroke="#30363d" stroke-width="1.5" />
+  <line x1="118" y1="95" x2="152" y2="130" stroke="#30363d" stroke-width="1.5" />
+  
+  <!-- Medium nodes -->
+  <circle cx="160" cy="60" r="10" fill="url(#nodeGrad)" stroke="#58a6ff" stroke-width="1" opacity="0.85" />
+  <circle cx="160" cy="95" r="10" fill="url(#nodeGrad)" stroke="#58a6ff" stroke-width="1" opacity="0.85" />
+  <circle cx="160" cy="130" r="10" fill="url(#nodeGrad)" stroke="#58a6ff" stroke-width="1" opacity="0.85" />
+
+  <!-- Small leaf nodes -->
+  <line x1="170" y1="60" x2="195" y2="45" stroke="#21262d" stroke-width="1" />
+  <line x1="170" y1="60" x2="195" y2="75" stroke="#21262d" stroke-width="1" />
+  <circle cx="200" cy="45" r="5" fill="#8b949e" opacity="0.6" />
+  <circle cx="200" cy="75" r="5" fill="#8b949e" opacity="0.6" />
+
+  <line x1="170" y1="95" x2="195" y2="85" stroke="#21262d" stroke-width="1" />
+  <line x1="170" y1="95" x2="195" y2="105" stroke="#21262d" stroke-width="1" />
+  <circle cx="200" cy="85" r="5" fill="#8b949e" opacity="0.6" />
+  <circle cx="200" cy="105" r="5" fill="#8b949e" opacity="0.6" />
+
+  <line x1="170" y1="130" x2="195" y2="120" stroke="#21262d" stroke-width="1" />
+  <line x1="170" y1="130" x2="195" y2="140" stroke="#21262d" stroke-width="1" />
+  <circle cx="200" cy="120" r="5" fill="#8b949e" opacity="0.6" />
+  <circle cx="200" cy="140" r="5" fill="#8b949e" opacity="0.6" />
+
+  <!-- Text (right side) -->
+  <text x="235" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" font-size="42" font-weight="800" fill="url(#textGrad)" filter="url(#glow)">Graphify</text>
+  <text x="235" y="130" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" font-size="28" font-weight="600" fill="#f78166" letter-spacing="4">PRO</text>
+
+  <!-- Tagline -->
+  <text x="445" y="130" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" font-size="12" fill="#484f58" font-style="italic">Rust</text>
+
+  <!-- Bottom accent line -->
+  <rect x="235" y="145" width="140" height="2" rx="1" fill="#f78166" opacity="0.5" />
+</svg>
