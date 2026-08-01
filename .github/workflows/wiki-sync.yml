@@ -1,0 +1,58 @@
+name: Wiki Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'comparison.md'
+      - 'PRODUCTION_READINESS.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-wiki:
+    name: Mirror docs to wiki
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Checkout wiki
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Mirror docs
+        run: |
+          # Map repo docs to wiki pages (same base name as the repo file).
+          # ARCHITECTURE.md, BENCHMARKS.md, CHANGELOG.md and SECURITY.md are
+          # intentionally not mirrored: the wiki has richer curated pages for
+          # those topics (Architecture, Benchmarks, Changelog, Security).
+          # Add a filename to the list below to mirror it on every push.
+          for file in README.md CONTRIBUTING.md comparison.md PRODUCTION_READINESS.md; do
+            if [ -f "$file" ]; then
+              cp "$file" "wiki/$file"
+              echo "Synced: $file"
+            else
+              echo "Skipped (not present): $file"
+            fi
+          done
+
+      - name: Commit & push
+        run: |
+          cd wiki
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [ -z "$(git status --porcelain)" ]; then
+            echo 'No changes to wiki'
+            exit 0
+          fi
+          git add -A
+          git commit -m 'docs: mirror repo docs into wiki'
+          git push origin master

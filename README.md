@@ -9,6 +9,7 @@
   <a href="https://github.com/codex0027/Graphify-Pro"><img src="https://img.shields.io/badge/languages-48-brightgreen" alt="48 Languages"/></a>
   <a href="https://github.com/codex0027/Graphify-Pro"><img src="https://img.shields.io/badge/crates-9-purple" alt="9 Crates"/></a>
   <a href="https://github.com/codex0027/Graphify-Pro/actions"><img src="https://img.shields.io/badge/tests-42%2F42%20passing-success" alt="Tests"/></a>
+  <a href="https://github.com/codex0027/Graphify-Pro/wiki"><img src="https://img.shields.io/badge/docs-wiki-blue" alt="Wiki"/></a>
 </p>
 
 ---
@@ -385,6 +386,7 @@ graphify query "..." --graph graphify-out/graph.json
 
 ## Learn more
 
+- **[Wiki](https://github.com/codex0027/Graphify-Pro/wiki)** — hosted docs: quickstart, CLI reference, architecture, data model, and more
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Module breakdown, data flow, design decisions
 - [BENCHMARKS.md](BENCHMARKS.md) — Token reduction benchmarks and comparison data
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Development setup, project structure, PR guidelines
