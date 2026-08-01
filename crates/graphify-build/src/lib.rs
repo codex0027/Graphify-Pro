@@ -3,6 +3,8 @@
 //! Builds the knowledge graph from extracted nodes and edges, handling
 //! deduplication, merging, and connection.
 
+pub mod resolve;
+
 use graphify_core::node::GraphNode;
 #[cfg(test)]
 use graphify_core::node::NodeType;

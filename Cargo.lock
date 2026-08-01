@@ -494,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-analyze"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -507,7 +507,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-build"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -524,7 +524,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-cli"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -550,7 +550,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-cluster"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -565,7 +565,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-core"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -580,7 +580,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-detect"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -596,7 +596,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-export"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -610,7 +610,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-extract"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "graphify-core",
@@ -653,7 +653,7 @@ dependencies = [
 
 [[package]]
 name = "graphify-watch"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "graphify-analyze",

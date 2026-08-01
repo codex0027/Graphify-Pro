@@ -1,6 +1,8 @@
 [package]
 name = "graphify-cli"
-version = "0.5.1"
+version.workspace = true
+description = "Graphify Pro CLI — build queryable knowledge graphs from your codebase. 48 languages, REST API, Neo4j & Obsidian exports."
+repository.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true

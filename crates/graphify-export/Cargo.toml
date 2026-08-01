@@ -1,6 +1,8 @@
 [package]
 name = "graphify-export"
-version = "0.1.0"
+version.workspace = true
+description = "Multi-format export for Graphify Pro — JSON, HTML/D3.js, Markdown, Mermaid, SVG, Neo4j CSV, and Obsidian wiki"
+repository.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true

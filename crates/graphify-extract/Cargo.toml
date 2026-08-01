@@ -1,6 +1,8 @@
 [package]
 name = "graphify-extract"
-version = "0.1.0"
+version.workspace = true
+description = "Language extraction engine for Graphify Pro — 48 languages via tree-sitter AST + regex fallback"
+repository.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true

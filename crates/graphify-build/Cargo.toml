@@ -1,6 +1,8 @@
 [package]
 name = "graphify-build"
-version = "0.1.0"
+version.workspace = true
+description = "Graph construction for Graphify Pro — deduplication, edge inference, incremental caching, and cross-file symbol resolution"
+repository.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true

@@ -1,6 +1,8 @@
 [package]
 name = "graphify-cluster"
-version = "0.1.0"
+version.workspace = true
+description = "Community detection for Graphify Pro — Louvain clustering with modularity scoring"
+repository.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true

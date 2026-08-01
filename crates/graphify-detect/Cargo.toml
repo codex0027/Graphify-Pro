@@ -1,6 +1,8 @@
 [package]
 name = "graphify-detect"
-version = "0.1.0"
+version.workspace = true
+description = "File detection and categorization for Graphify Pro — identifies code, docs, configs, and more"
+repository.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true

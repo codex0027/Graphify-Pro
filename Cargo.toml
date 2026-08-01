@@ -13,12 +13,14 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.0"
+version = "0.6.0"
 edition = "2021"
 authors = ["Graphify Pro Team"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/codex0027/Graphify-Pro"
-description = "A blazing-fast Rust reimagining of Graphify — extract, analyze, and visualize codebase knowledge graphs with 36 language support, web API, and Neo4j/Obsidian exports."
+description = "A blazing-fast Rust reimagining of Graphify — extract, analyze, and visualize codebase knowledge graphs with 48 language support, REST API, Neo4j/Obsidian exports, and multi-provider LLM semantic pass."
+homepage = "https://github.com/codex0027/Graphify-Pro"
+documentation = "https://github.com/codex0027/Graphify-Pro/blob/main/README.md"
 keywords = ["graph", "code-analysis", "knowledge-graph", "tree-sitter", "codebase", "visualization"]
 categories = ["development-tools", "command-line-utilities"]
 readme = "README.md"

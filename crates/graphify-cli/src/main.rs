@@ -37,6 +37,10 @@ enum Commands {
         /// Enable LLM semantic pass for community labeling (requires OPENAI_API_KEY)
         #[arg(long)]
         llm: bool,
+
+        /// Enable cross-file symbol resolution for more accurate import references
+        #[arg(long)]
+        resolve: bool,
     },
 
     /// Watch the project for changes and update the graph automatically
@@ -210,8 +214,8 @@ fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Build { path, output, max_file_size, force, llm } => {
-            cmd_build(&path, &output, max_file_size, force, llm)
+        Commands::Build { path, output, max_file_size, force, llm, resolve } => {
+            cmd_build(&path, &output, max_file_size, force, llm, resolve)
         }
         Commands::Watch { path, output } => cmd_watch(&path, &output),
         Commands::Analyze { graph, top, quality } => cmd_analyze(&graph, top, quality),
@@ -234,7 +238,7 @@ fn main() -> Result<(), anyhow::Error> {
 // ── Command Implementations ───────────────────────────────────────────────────
 
 #[allow(clippy::ptr_arg)]
-fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, llm: bool) -> Result<(), anyhow::Error> {
+fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, llm: bool, resolve: bool) -> Result<(), anyhow::Error> {
     println!("🔬 Graphify Pro — Building Knowledge Graph");
     println!("   Project: {}", path.display());
     println!("   Output:  {}", output.display());
@@ -347,6 +351,17 @@ fn cmd_build(path: &PathBuf, output: &PathBuf, max_file_size: u64, force: bool, 
     // Build graph
     let mut kg = graphify_build::build_graph(&extractions, &path.to_string_lossy());
     println!("🧩 Built graph: {} nodes, {} edges", kg.stats.node_count, kg.stats.edge_count);
+
+    // ── Cross-file symbol resolution ────────────────────────────────────
+    if resolve {
+        let resolved = graphify_build::resolve::resolve_cross_file_references(&kg.nodes, &mut kg.edges);
+        kg.stats.edge_count = kg.edges.len();
+        if resolved > 0 {
+            println!("🔗 Resolved {} cross-file references", resolved);
+        } else {
+            println!("🔗 No cross-file references resolved");
+        }
+    }
 
     // Infer additional edges
     let inferred = graphify_build::infer_edges(&kg.nodes, &mut kg.edges);
@@ -1100,7 +1115,7 @@ fn cmd_benchmark(path: &PathBuf, graph_path: Option<&PathBuf>) -> Result<(), any
             // Build graph first
             let output = std::path::PathBuf::from("graphify-out");
             println!("📝 Building graph first...");
-            cmd_build(path, &output, 10, true, false)?;
+            cmd_build(path, &output, 10, true, false, false)?;
             output.join("graph.json")
         }
     };

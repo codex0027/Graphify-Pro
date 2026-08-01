@@ -2,6 +2,34 @@
 
 All notable changes to Graphify Pro will be documented in this file.
 
+## [0.6.0] — 2026-08-01
+
+### Added
+- **GitHub Actions CI/CD pipeline**: Check, Clippy, Test, and Release Build jobs with artifact upload
+- **Cross-file symbol resolution** (`--resolve` flag): Builds symbol table to resolve import edges to actual node IDs across files
+- **Crates.io publishing metadata**: All 9 crates have descriptions, repository links, and share workspace version (0.6.0)
+- **New `resolve` module** in `graphify-build`: `resolve_cross_file_references()` with 2 unit tests
+- **Professional SVG logo** (`docs/logo.svg`): Network graph visualization with gradient nodes
+- **Production readiness report** (`PRODUCTION_READINESS.md`): Comprehensive self-test results
+
+### Changed
+- Bumped workspace version from 0.4.0 → 0.6.0
+- All crate versions now inherit from workspace (`version.workspace = true`)
+- CLI `cmd_build` now accepts `resolve: bool` parameter
+- `GraphNode::new()` in tests uses struct update syntax for cleaner test code
+
+### Fixed
+- Zero clippy warnings across entire workspace (16 warnings fixed)
+- Borrow-checker error in `resolve.rs`: owned `HashSet` instead of borrowed references
+- Same-file detection in symbol resolution: now compares source node file vs matched node file
+- Confidence `Default` derive: added `#[default]` on `Extracted` variant
+- `GraphDB` now implements `Default` trait
+- `sort_by` → `sort_by_key` with `Reverse` in god_nodes and exports
+- Tree-sitter C/C#/PHP tests: graceful early return on grammar version mismatch
+- Gemini API key: now uses `x-goog-api-key` header instead of URL query param
+- Removed dead `LlmProvider::OpenAICompatible` variant
+- Restored `NodeType` and `GraphStats` imports incorrectly removed by auto-fix
+
 ## [0.4.0] — 2026-07-31
 
 ### Added

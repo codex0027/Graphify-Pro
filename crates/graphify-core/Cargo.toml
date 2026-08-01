@@ -1,6 +1,8 @@
 [package]
 name = "graphify-core"
-version = "0.1.0"
+version.workspace = true
+description = "Core graph data structures for Graphify Pro — nodes, edges, hyperedges, and graph database"
+repository.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true

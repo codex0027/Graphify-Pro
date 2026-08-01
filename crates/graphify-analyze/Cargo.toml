@@ -1,6 +1,8 @@
 [package]
 name = "graphify-analyze"
-version = "0.1.0"
+version.workspace = true
+description = "Graph analysis for Graphify Pro — god nodes, impact analysis, quality detection, architecture insights, and LLM integration"
+repository.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
